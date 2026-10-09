@@ -11,6 +11,8 @@ add_subdirectory(external/raylib)
 # Build our application
 add_executable(PhysicsEngine
     src/main.cpp
+    src/physics/PhysicsWorld.cpp
+    src/physics/RigidBody.cpp
 )
 
 # Link raylib

@@ -71,4 +71,29 @@ public:
     {
         return x * other.x + y * other.y;
     }
+
+    Vec2& operator+=(const Vec2& other) {
+        x += other.x;
+        y += other.y;
+
+        return *this;
+    }
+
+    Vec2& operator-=(const Vec2& other){
+        x -= other.x;
+        y -= other.y;
+
+        return *this;
+    }
+
+    const Vec2& operator=(const Vec2& other){
+        x = other.x;
+        y = other.y;
+
+        return *this;
+    }
+
+   
 };
+
+
