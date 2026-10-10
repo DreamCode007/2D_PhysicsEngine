@@ -1,12 +1,15 @@
 #include "PhysicsWorld.h"
+#include "Shape.h"
+#include "Circle.h"
+#include "Box.h"
 
 PhysicsWorld::PhysicsWorld() : gravity(0.0f, 500.0f), groundY(650.0f),
       restitution(0.75f){}
 
 void PhysicsWorld::AddBody(
-    const RigidBody& body)
+    RigidBody body)
 {
-    bodies.push_back(body);
+    bodies.push_back(std::move(body));
 }
 
 

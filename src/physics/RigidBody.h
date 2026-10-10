@@ -1,5 +1,7 @@
 #pragma once
 #include "../math/Vec2.h"
+#include "Shape.h"
+#include <memory>
 
 class RigidBody{
     private:
@@ -10,15 +12,24 @@ class RigidBody{
         float radius;
         float mass;
         float restitution;
+        std::unique_ptr<Shape> shape;
     public:
         RigidBody();
         
         RigidBody(
         const Vec2& position,
         float mass,
+        std::unique_ptr<Shape> shape,
         float radius = 25.0f,
         float restitution = 0.75f
         );
+
+        RigidBody(const RigidBody&) = delete;
+        RigidBody& operator=(const RigidBody&) = delete;
+
+        // Bodies can be moved into the physics world.
+        RigidBody(RigidBody&&) noexcept = default;
+        RigidBody& operator=(RigidBody&&) = default;
 
         void ApplyForce(const Vec2& force);
 
@@ -26,6 +37,7 @@ class RigidBody{
 
 
         void SetVelocity(const Vec2& velocity);
+        void SetPosition(const Vec2& p);
 
         void SetAcceleration(
             const Vec2& acceleration
@@ -46,12 +58,13 @@ class RigidBody{
 
         const float GetRestitution() const;
 
-        
+        Shape& GetShape();
+        const Shape& GetShape() const;
 
 
         void GroundCollision(
             float groundY
-        ) ;
+        );
 
         bool isGrounded(float GroundY);
 

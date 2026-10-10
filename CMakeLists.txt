@@ -13,6 +13,8 @@ add_executable(PhysicsEngine
     src/main.cpp
     src/physics/PhysicsWorld.cpp
     src/physics/RigidBody.cpp
+    src/physics/Circle.cpp
+    src/physics/Box.cpp
 )
 
 # Link raylib

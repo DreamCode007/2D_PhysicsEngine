@@ -15,19 +15,22 @@ RigidBody::RigidBody()
 RigidBody::RigidBody(
     const Vec2& position,
     float mass,
-    float radius,
+    std::unique_ptr<Shape> shape,
+    float radius,  
     float restitution
     )
     : position(position),
       velocity(0.0f, 0.0f),
+      mass(mass),
       force(0.0f, 0.0f),
       acceleration(0.0f, 0.0f),
+      shape(std::move(shape)),
       radius(radius),
       restitution(
         restitution < 0.0f ? 0.0f : 
         (restitution > 1.0f ? 1.0f : restitution)
-      ),
-      mass(mass)
+      )
+      
 {
 }
 
@@ -84,6 +87,11 @@ void RigidBody::SetRestitution(float r){
         
 }
 
+void RigidBody::SetPosition(const Vec2& v) 
+{
+    position = v;
+}
+
 const Vec2& RigidBody::GetPosition() const
 {
     return position;
@@ -113,7 +121,9 @@ void RigidBody::GroundCollision(
     float groundY
 )
 {
-    
+    radius = GetRadius();
+    if(radius <= 0.0f) return;
+
     if (position.y + radius >= groundY)
     {
         
@@ -134,13 +144,22 @@ bool RigidBody::isGrounded(
     return position.y + radius >= groundY - 0.01f;
 }
 
+Shape& RigidBody::GetShape()
+{
+    return *shape;
+}
+
+const Shape& RigidBody::GetShape() const
+{
+    return *shape;
+}
 void RigidBody::Collision(RigidBody& other){
 
     Vec2 normal = other.position - position;
 
     float distance = normal.x * normal.x + normal.y * normal.y;
 
-    float totalRadius = radius + other.radius;
+    float totalRadius = GetRadius() + other.GetRadius();
 
     if(distance >= totalRadius*totalRadius) return;
 

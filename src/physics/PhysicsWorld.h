@@ -17,7 +17,7 @@ private:
 public:
     PhysicsWorld();
 
-    void AddBody(const RigidBody& body);
+    void AddBody(RigidBody body);
 
     void Step(float dt);
 

@@ -1,5 +1,7 @@
 #include "raylib.h"
 #include "physics/PhysicsWorld.h"
+#include "physics/Circle.h"
+#include "physics/Box.h"
 
 int main()
 {
@@ -9,17 +11,30 @@ int main()
     PhysicsWorld world;
 
   
-    RigidBody ball1(Vec2(200.0f, 100.0f), 1.0f, 20.0f, 0.3f);
-    RigidBody ball2(Vec2(500.0f, 100.0f), 2.0f, 35.0f, 0.7f);
-    //RigidBody ball3(Vec2(800.0f, 50.0f), 5.0f, 50.0f, 0.95f);
+    RigidBody ball(
+        Vec2(200.0f, 100.0f),
+        50.0f,
+        std::make_unique<Circle>(25.0f),
+        25.0f,
+        0.8f
+    );
 
-    ball1.SetVelocity(Vec2(400.0f, 0.0f));
-    ball2.SetVelocity(Vec2(-450.0f, 0.0f));
-    //ball3.SetVelocity(Vec2(-100.0f, 100.0f));
+    ball.SetVelocity(Vec2(100.0f, 0.0f));
 
-    world.AddBody(ball1);
-    world.AddBody(ball2);
-    //world.AddBody(ball3);
+    // Rectangle body
+    RigidBody rectangle(
+        Vec2(500.0f, 100.0f),
+        60.0f,
+        std::make_unique<Box>(100.0f, 50.0f),
+        25.0f,
+        0.5f
+    );
+
+    rectangle.SetVelocity(Vec2(-30.0f, 0.0f));
+
+    // Transfer ownership to the physics world.
+    world.AddBody(std::move(ball));
+    world.AddBody(std::move(rectangle));
 
     world.SetGround(650.0f, 0.75f);
 
@@ -45,16 +60,38 @@ int main()
         for (int i = 0; i < bodies.size(); i++)
         {
             const Vec2& p = bodies[i].GetPosition();
+            const Shape& shape = bodies[i].GetShape();
+            if (shape.GetType() == ShapeType::Circle)
+            {
+                const auto& circle =
+                    static_cast<const Circle&>(shape);
 
-            Color color = (i == 0) ? RED :
-                          (i == 1) ? GREEN : BLUE;
+                DrawCircleV(
+                    Vector2{p.x, p.y},
+                    circle.GetRadius(),
+                    RED
+                );
+            }
+            else if (shape.GetType() == ShapeType::Box)
+            {
+                const auto& box =
+                    static_cast<const Box&>(shape);
 
-            DrawCircleV(
-                Vector2{p.x, p.y},
-                bodies[i].GetRadius(),
-                color
-            );
+                DrawRectangle(
+                    static_cast<int>(
+                        p.x - box.GetWidth() / 2.0f
+                    ),
+                    static_cast<int>(
+                        p.y - box.GetHeight() / 2.0f
+                    ),
+                    static_cast<int>(box.GetWidth()),
+                    static_cast<int>(box.GetHeight()),
+                    GREEN
+                );
+            }
         }
+
+        
 
         DrawText("Three independent rigid bodies", 20, 20, 20, WHITE);
         DrawFPS(20, 50);
