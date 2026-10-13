@@ -69,4 +69,6 @@ class RigidBody{
         bool isGrounded(float GroundY);
 
         void Collision(RigidBody& other);
+
+        void ResolveCircleBox(RigidBody& boxBody);
 };

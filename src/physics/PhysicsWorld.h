@@ -21,7 +21,8 @@ public:
 
     void Step(float dt);
 
-    std::vector<RigidBody>& GetBodies();\
+    std::vector<RigidBody>& GetBodies();
+    const std::vector<RigidBody>& GetBodies() const;
 
     void SetGround(float gY, float r);
 };

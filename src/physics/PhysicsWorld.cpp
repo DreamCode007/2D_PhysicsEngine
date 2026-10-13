@@ -12,8 +12,12 @@ void PhysicsWorld::AddBody(
     bodies.push_back(std::move(body));
 }
 
+std::vector<RigidBody>& PhysicsWorld::GetBodies() 
+{
+    return bodies;
+}
 
-std::vector<RigidBody>& PhysicsWorld::GetBodies()
+const std::vector<RigidBody>& PhysicsWorld::GetBodies() const
 {
     return bodies;
 }
@@ -50,11 +54,26 @@ void PhysicsWorld::Step(float dt)
         );
     }
 
-    for (int i = 0; i < bodies.size(); ++i)
+    for (int i = 0; i < bodies.size(); i++)
     {
-        for (int j = i + 1; j < bodies.size(); ++j)
+        for (int j = i + 1; j < bodies.size(); j++)
         {
-            bodies[i].Collision(bodies[j]);
+            RigidBody& a = bodies[i];
+            RigidBody& b = bodies[j];
+
+            const ShapeType A = a.GetShape().GetType();
+            const ShapeType B = b.GetShape().GetType();
+
+            if(A == ShapeType::Circle && B == ShapeType::Circle){
+                a.Collision(b);
+            }
+            else if(A == ShapeType::Circle && B == ShapeType::Box){
+                a.ResolveCircleBox(b);
+            }
+            else if(A == ShapeType::Box && B == ShapeType::Circle){
+                b.ResolveCircleBox(a);
+            }
+
         }
     }
 }

@@ -1,5 +1,8 @@
 #include "RigidBody.h"
 #include <cmath>
+#include "Circle.h"
+#include "Box.h"
+#include <algorithm>
 
 RigidBody::RigidBody()
     : position(0.0f, 0.0f),
@@ -121,18 +124,44 @@ void RigidBody::GroundCollision(
     float groundY
 )
 {
+    float bottom = position.y;
     radius = GetRadius();
     if(radius <= 0.0f) return;
 
-    if (position.y + radius >= groundY)
+    if(shape->GetType() == ShapeType::Circle){
+
+        const auto& circle = static_cast<const Circle&>(*shape);
+
+        radius = circle.GetRadius();
+        bottom = position.y + radius;
+    }
+    else if(shape->GetType() == ShapeType::Box){
+
+        const auto& box = static_cast<const Box&>(*shape);
+        bottom = position.y + box.GetHeight()/2.0f;
+        
+    }
+    else{
+        return;
+    }
+
+    if(bottom < groundY){
+        return;
+    }
+
+    
+    if (bottom >= groundY)
     {
         
-        position.y = groundY - radius;
+        position.y -= bottom - groundY;
 
         
         if (velocity.y > 0.0f)
         {
             velocity.y *= -restitution;
+            if(velocity.y > - 1.0f && velocity.y < 0.0f){
+                velocity.y = 0.0f;
+            }
         }
     }
 }
@@ -219,5 +248,114 @@ void RigidBody::Collision(RigidBody& other){
     other.velocity += impulse * invMassB;
 
     
+    
+}
+
+void RigidBody::ResolveCircleBox(RigidBody& boxBody){
+    if (shape->GetType() != ShapeType::Circle ||
+        boxBody.shape->GetType() != ShapeType::Box)
+    {
+        return;
+    }
+    const auto& circle = static_cast<const Circle&>(*shape);
+    const  auto& box = static_cast<const Box&>(*boxBody.shape);
+
+    const float rad = circle.GetRadius();
+
+    const float halfWidth = box.GetWidth()/2;
+    const float halfHeight = box.GetHeight()/2;
+
+    const float closestX = std::clamp(
+        position.x,
+        boxBody.position.x - halfWidth,
+        boxBody.position.x + halfWidth
+    );
+
+    const float closestY = std::clamp(
+        position.y,
+        boxBody.position.y - halfHeight,
+        boxBody.position.y + halfHeight
+    );
+
+    Vec2 normal(
+        closestX - position.x,
+        closestY - position.y
+
+    );
+
+    float distance = normal.x*normal.x + normal.y*normal.y;
+
+    if(distance >= rad*rad)
+        return;
+
+    distance = std::sqrt(distance);
+
+    if (distance < 0.0001f)
+    {
+        const float left =
+            position.x - (boxBody.position.x - halfWidth);
+        const float right =
+            (boxBody.position.x + halfWidth) - position.x;
+        const float top =
+            position.y - (boxBody.position.y - halfHeight);
+        const float bottom =
+            (boxBody.position.y + halfHeight) - position.y;
+
+        const float nearest = std::min(
+            std::min(left, right),
+            std::min(top, bottom)
+        );
+
+        if (nearest == left)
+            normal = Vec2(-1.0f, 0.0f);
+        else if (nearest == right)
+            normal = Vec2(1.0f, 0.0f);
+        else if (nearest == top)
+            normal = Vec2(0.0f, -1.0f);
+        else
+            normal = Vec2(0.0f, 1.0f);
+
+        distance = 0.0f;
+    }
+    else
+    {
+        normal = normal / distance;
+    }
+
+    
+    const float invMassA = 1.0f / mass;
+    const float invMassB = 1.0f / boxBody.mass;
+    const float invMassSum = invMassA + invMassB;
+
+   
+    const float penetration = rad - distance;
+    const float correctionMagnitude =
+        std::max(penetration - 0.01f, 0.0f) * 0.8f/invMassSum;
+
+    const Vec2 correction = normal*correctionMagnitude;
+
+    position -= correction * invMassA;
+    boxBody.position += correction * invMassB;
+
+   
+    const Vec2 relativeVelocity = boxBody.velocity - velocity;
+
+    const float velocityAlongNormal =
+        relativeVelocity.x * normal.x +
+        relativeVelocity.y * normal.y;
+
+
+    if (velocityAlongNormal >= 0.0f)
+        return;
+
+    const float resti = std::min(restitution, boxBody.restitution);
+
+    const float impulseMagnitude =
+        -(1.0f + resti) * velocityAlongNormal/invMassSum;
+
+    const Vec2 impulse = normal * impulseMagnitude;
+
+    velocity -= impulse*invMassA;
+    boxBody.velocity += impulse*invMassB;
     
 }

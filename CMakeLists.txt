@@ -15,6 +15,7 @@ add_executable(PhysicsEngine
     src/physics/RigidBody.cpp
     src/physics/Circle.cpp
     src/physics/Box.cpp
+    src/Render/Renderer.cpp
 )
 
 # Link raylib
