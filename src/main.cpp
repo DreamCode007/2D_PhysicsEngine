@@ -4,6 +4,12 @@
 #include "physics/Box.h"
 #include "Render/Renderer.h"
 
+/*
+$env:PATH = "C:\msys64\ucrt64\bin;C:\msys64\usr\bin;" + $env:PATH
+cmake --build build
+*/
+
+
 int main()
 {
     InitWindow(1080, 720, "Physics Sandbox");
@@ -22,7 +28,7 @@ int main()
 
     ball.SetVelocity(Vec2(250.0f, 0.0f));
 
-    // Rectangle body
+   
     RigidBody rectangle(
         Vec2(450.0f, 100.0f),
         60.0f,
@@ -33,7 +39,7 @@ int main()
 
     rectangle.SetVelocity(Vec2(-80.0f, 0.0f));
 
-    // Transfer ownership to the physics world.
+ 
     world.AddBody(std::move(ball));
     world.AddBody(std::move(rectangle));
 

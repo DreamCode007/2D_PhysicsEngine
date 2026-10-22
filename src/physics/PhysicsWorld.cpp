@@ -73,7 +73,11 @@ void PhysicsWorld::Step(float dt)
             else if(A == ShapeType::Box && B == ShapeType::Circle){
                 b.ResolveCircleBox(a);
             }
+            else if(A == ShapeType::Box && B == ShapeType::Box){
+                
+                a.ResolveBoxBox(b);
+            }
 
-        }
-    }
+        }  
+    }   
 }

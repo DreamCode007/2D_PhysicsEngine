@@ -71,4 +71,6 @@ class RigidBody{
         void Collision(RigidBody& other);
 
         void ResolveCircleBox(RigidBody& boxBody);
+
+        void ResolveBoxBox(RigidBody& other);
 };

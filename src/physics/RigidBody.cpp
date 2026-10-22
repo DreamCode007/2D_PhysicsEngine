@@ -229,11 +229,11 @@ void RigidBody::Collision(RigidBody& other){
         relativeVelocity.x * normal.x +
         relativeVelocity.y * normal.y;
 
-    // If the bodies are separating, don't apply another impulse.
+    
     if (velocityAlongNormal >= 0.0f)
         return;
 
-    ///Calculate the collision impulse.
+   
     const float r =
         std::min(restitution, other.restitution);
 
@@ -358,4 +358,83 @@ void RigidBody::ResolveCircleBox(RigidBody& boxBody){
     velocity -= impulse*invMassA;
     boxBody.velocity += impulse*invMassB;
     
+}
+
+ 
+void RigidBody::ResolveBoxBox(RigidBody& other){
+
+    if (shape->GetType()       != ShapeType::Box ||
+        other.shape->GetType() != ShapeType::Box)
+    {
+        return;
+    }
+
+    const auto& boxA = static_cast<const Box&>(*shape);
+    const auto& boxB = static_cast<const Box&>(*other.shape);
+
+    const float halfWA = boxA.GetWidth()  * 0.5f;
+    const float halfHA = boxA.GetHeight() * 0.5f;
+    const float halfWB = boxB.GetWidth()  * 0.5f;
+    const float halfHB = boxB.GetHeight() * 0.5f;
+
+
+    const Vec2 delta = other.position - position;
+
+
+    const float overlapX = (halfWA + halfWB) - std::abs(delta.x);
+    if (overlapX <= 0.0f) return;   
+    const float overlapY = (halfHA + halfHB) - std::abs(delta.y);
+    if (overlapY <= 0.0f) return;   
+ 
+    Vec2  normal;
+    float penetration;
+
+    if (overlapX < overlapY)
+    {
+        
+        penetration = overlapX;
+        normal = Vec2(delta.x < 0.0f ? -1.0f : 1.0f, 0.0f);
+    }
+    else
+    {
+        
+        penetration = overlapY;
+        normal = Vec2(0.0f, delta.y < 0.0f ? -1.0f : 1.0f);
+    }
+
+  
+    const float invMassA   = 1.0f / mass;
+    const float invMassB   = 1.0f / other.mass;
+    const float invMassSum = invMassA + invMassB;
+
+    const float slop    = 0.01f;   
+    const float percent = 0.8f;    
+
+    const float correctionMag =
+        percent * std::max(penetration - slop, 0.0f) / invMassSum;
+
+    const Vec2 correction = normal * correctionMag;
+
+    position       -= correction * invMassA;
+    other.position += correction * invMassB;
+
+    const Vec2 relativeVelocity = other.velocity - velocity;
+
+    const float velocityAlongNormal =
+        relativeVelocity.x * normal.x +
+        relativeVelocity.y * normal.y;
+
+   
+    if (velocityAlongNormal >= 0.0f) return;
+
+
+    const float r = std::min(restitution, other.restitution);
+
+    const float impulseMag =
+        -(1.0f + r) * velocityAlongNormal / invMassSum;
+
+    const Vec2 impulse = normal * impulseMag;
+
+    velocity       -= impulse * invMassA;
+    other.velocity += impulse * invMassB;
 }
