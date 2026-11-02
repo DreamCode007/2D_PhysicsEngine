@@ -21,11 +21,11 @@ float Box::GetHeight() const
     return height;
 }
 
-void Box::SetSize(float width, float height)
+void Box::SetSize(float w, float h)
 {
     if (width > 0.0f && height > 0.0f)
     {
-        width = width;
-        height = height;
+        width = w;
+        height = h;
     }
 }

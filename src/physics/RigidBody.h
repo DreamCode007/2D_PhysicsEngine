@@ -9,6 +9,10 @@ class RigidBody{
         Vec2 velocity;
         Vec2 force;
         Vec2 acceleration;
+        float angle = 0.0f;          
+        float angularVelocity = 0.0f;
+        float torqueAccum = 0.0f;
+        float inertia = 0.0f; 
         float radius;
         float mass;
         float restitution;
@@ -45,18 +49,27 @@ class RigidBody{
 
         void SetRadius(float radius);
         void SetRestitution(float restitution);
-
+        void SetAngularVelocity(float angularVelocity);
 
 
         const Vec2& GetPosition() const;
 
         const Vec2& GetVelocity() const;
 
+        float GetAngle() const;
+        float GetAngularVelocity() const;
+
         float GetMass() const;
 
         const float GetRadius() const;
 
         const float GetRestitution() const;
+
+        float GetInertia() const;
+
+        void ApplyTorque(float torque);
+
+        void ApplyForceAtPoint(const Vec2& appliedForce, const Vec2& worldPoint);
 
         Shape& GetShape();
         const Shape& GetShape() const;

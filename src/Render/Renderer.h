@@ -12,5 +12,5 @@ private:
 public:
     Renderer();
 
-    void Draw(const PhysicsWorld& world);
+    void Draw(PhysicsWorld& world);
 };

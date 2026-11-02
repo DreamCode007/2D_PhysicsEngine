@@ -13,7 +13,7 @@ cmake --build build
 int main()
 {
     InitWindow(1080, 720, "Physics Sandbox");
-    SetTargetFPS(60);
+    SetTargetFPS(120);
 
     PhysicsWorld world;
 

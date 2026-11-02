@@ -38,6 +38,16 @@ void PhysicsWorld::SetGround(
     restitution = r;
 }
 
+void PhysicsWorld::ToggleGravity()
+{
+    gravityEnabled = !gravityEnabled;
+}
+
+bool PhysicsWorld::isGravityEnabled() const
+{
+    return gravityEnabled;
+}
+
 
 void PhysicsWorld::Step(float dt)
 {
@@ -45,8 +55,10 @@ void PhysicsWorld::Step(float dt)
     {
    
         Vec2 gravityForce = gravity * body.GetMass();
-
-        body.ApplyForce(gravityForce);
+        if(gravityEnabled){
+            body.ApplyForce(gravityForce);
+        }
+        
         body.Integrate(dt);
 
         body.GroundCollision(
