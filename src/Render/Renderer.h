@@ -2,6 +2,7 @@
 
 #include "raylib.h"
 #include "../physics/PhysicsWorld.h"
+#include "../physics/GPUPhysicsWorld.h"
 
 class Renderer
 {
@@ -13,4 +14,5 @@ public:
     Renderer();
 
     void Draw(PhysicsWorld& world);
+    void DrawGPU(GPUPhysicsWorld& gpuWorld);
 };

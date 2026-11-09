@@ -1,5 +1,5 @@
 #include "Renderer.h"
-
+#include "string"
 #include "../physics/Circle.h"
 #include "../physics/Box.h"
 
@@ -13,8 +13,8 @@ void SpawnCircle(PhysicsWorld& world, Vec2 p){
     RigidBody ball(
         p,
         50.0f,
-        std::make_unique<Circle>(0.9f),
-        0.9f,
+        std::make_unique<Circle>(2.0f),
+        2.0f,
         0.8f
     );
 
@@ -211,8 +211,153 @@ void Renderer::Draw(PhysicsWorld& world)
     {
         SpawnBox(world, spawnPosition);
     }
+    std::string object_Num = std::to_string(bodies.size());
+    DrawText(object_Num.c_str(), 1000, 20, 22, WHITE);
+    DrawText("2D Physics Engine [CPU Mode]", 20, 20, 22, WHITE);
+    DrawText("Press [TAB] to switch to GPU Parallel Mode", 20, 75, 18, GRAY);
+    DrawFPS(20, 50);
 
-    DrawText("2D Physics Engine", 20, 20, 22, WHITE);
+    EndDrawing();
+}
+
+void GrabObjectGPU(GPUPhysicsWorld& gpuWorld)
+{
+    static int grabbedIndex = -1;
+    static Vec2 offset(0.0f, 0.0f);
+    static Vec2 previousMouse(0.0f, 0.0f);
+    static Vec2 dragVelocity(0.0f, 0.0f);
+
+    Vector2 mouse = GetMousePosition();
+    Vec2 mousePos(mouse.x, mouse.y);
+
+    const auto& pos = gpuWorld.GetPositions();
+    const auto& angles = gpuWorld.GetAngles();
+    const auto& shapeTypes = gpuWorld.GetShapeTypes();
+    const auto& halfExtents = gpuWorld.GetHalfExtents();
+    int count = gpuWorld.GetBodyCount();
+
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    {
+        grabbedIndex = -1;
+        for (int i = count - 1; i >= 0; --i)
+        {
+            float bx = pos[i * 2];
+            float by = pos[i * 2 + 1];
+            float dx = mousePos.x - bx;
+            float dy = mousePos.y - by;
+            int shape = (i < (int)shapeTypes.size()) ? shapeTypes[i] : 0;
+            float hw = (i * 2 < (int)halfExtents.size()) ? halfExtents[i * 2] : 20.0f;
+            float hh = (i * 2 + 1 < (int)halfExtents.size()) ? halfExtents[i * 2 + 1] : 20.0f;
+
+            bool inside = false;
+            if (shape == 0) // Circle
+            {
+                inside = (dx * dx + dy * dy) <= (hw * hw);
+            }
+            else // Box
+            {
+                float ang = (i < (int)angles.size()) ? angles[i] : 0.0f;
+                float c = std::cos(ang);
+                float s = std::sin(ang);
+                float localX = dx * c + dy * s;
+                float localY = -dx * s + dy * c;
+                inside = (std::abs(localX) <= hw) && (std::abs(localY) <= hh);
+            }
+
+            if (inside)
+            {
+                grabbedIndex = i;
+                offset = Vec2(bx - mousePos.x, by - mousePos.y);
+                break;
+            }
+        }
+    }
+
+    if (grabbedIndex >= 0 && grabbedIndex < count)
+    {
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+        {
+            float dt = GetFrameTime();
+            if (dt > 0.0001f)
+            {
+                dragVelocity = Vec2(
+                    (mousePos.x - previousMouse.x) / dt,
+                    (mousePos.y - previousMouse.y) / dt
+                );
+            }
+
+            gpuWorld.SetBodyPosition(grabbedIndex, mousePos.x + offset.x, mousePos.y + offset.y);
+            gpuWorld.SetBodyVelocity(grabbedIndex, 0.0f, 0.0f);
+            previousMouse = mousePos;
+        }
+
+        if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
+        {
+            gpuWorld.SetBodyVelocity(grabbedIndex, dragVelocity.x, dragVelocity.y);
+            grabbedIndex = -1;
+        }
+    }
+}
+
+void Renderer::DrawGPU(GPUPhysicsWorld& gpuWorld)
+{
+    BeginDrawing();
+    ClearBackground(backgroundColor);
+
+    DrawLine(0, 650, GetScreenWidth(), 650, groundColor);
+
+    GrabObjectGPU(gpuWorld);
+
+    Vector2 mouse = GetMousePosition();
+    if (IsKeyDown(KEY_ONE))
+    {
+        gpuWorld.SpawnCircle(mouse.x, mouse.y, 2.0f, 40.0f);
+    }
+    if (IsKeyPressed(KEY_TWO))
+    {
+        gpuWorld.SpawnBox(mouse.x, mouse.y, 44.0f, 28.0f, 50.0f);
+    }
+    if (IsKeyPressed(KEY_R))
+    {
+        gpuWorld.Reset(gpuWorld.GetBodyCount());
+    }
+
+    const auto& pos = gpuWorld.GetPositions();
+    const auto& angles = gpuWorld.GetAngles();
+    const auto& shapeTypes = gpuWorld.GetShapeTypes();
+    const auto& halfExtents = gpuWorld.GetHalfExtents();
+    int count = gpuWorld.GetBodyCount();
+
+    for (int i = 0; i < count; ++i)
+    {
+        float x = pos[i * 2];
+        float y = pos[i * 2 + 1];
+        int shape = (i < (int)shapeTypes.size()) ? shapeTypes[i] : 0;
+        float hw = (i * 2 < (int)halfExtents.size()) ? halfExtents[i * 2] : 20.0f;
+        float hh = (i * 2 + 1 < (int)halfExtents.size()) ? halfExtents[i * 2 + 1] : 20.0f;
+        float ang = (i < (int)angles.size()) ? angles[i] : 0.0f;
+
+        if (shape == 0) // Circle
+        {
+            DrawCircleV(Vector2{x, y}, hw, RED);
+            // Draw rotation line
+            float cx = x + std::cos(ang) * hw;
+            float cy = y + std::sin(ang) * hw;
+            DrawLine(x, y, cx, cy, WHITE);
+        }
+        else // Box
+        {
+            Rectangle rect{x, y, hw * 2.0f, hh * 2.0f};
+            Vector2 origin{hw, hh};
+            float angleDeg = ang * (180.0f / PI);
+            DrawRectanglePro(rect, origin, angleDeg, BLUE);
+        }
+    }
+
+    std::string countStr = "GPU Bodies: " + std::to_string(count);
+    DrawText(countStr.c_str(), 860, 20, 22, GREEN);
+    DrawText("2D Physics Engine [GPU SAT Parallel - RTX 3050]", 20, 20, 22, WHITE);
+    DrawText("[1] Spawn Circle | [2] Spawn Box | Left Click & Drag | [TAB] Switch to CPU", 20, 75, 18, LIGHTGRAY);
     DrawFPS(20, 50);
 
     EndDrawing();
